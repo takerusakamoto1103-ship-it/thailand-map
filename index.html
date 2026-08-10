@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Thailand Travel Map</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 600px; border-radius: 15px; }
+        .card-img-top { height: 200px; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
+        .card-img-top:hover { opacity: 0.85; }
+        .always-label {
+            font-weight: bold;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container pb-5 pt-4">
+    <!-- 一番上に配置した h1 タイトル（学籍番号・氏名付き） -->
+    <div class="mb-4">
+        <h1 class="h3 fw-bold text-dark">
+            Thailand Travel Map & Photo Log
+        </h1>
+        <p class="text-muted m-0">Student ID: 38413127 , Name: Takeru Sakamoto</p>
+    </div>
+
+    <!-- マップ表示エリア -->
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- エリアごとに分かれた写真一覧の表示場所 -->
+    <div id="sectionsContainer"></div>
+</div>
+
+<!-- Bootstrap モーダル（写真拡大表示用ウィンドウ） -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body text-center position-relative p-0">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                <img id="modalImage" src="" class="img-fluid rounded shadow-lg" style="max-height: 85vh;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var map = L.map('map').setView([13.8, 100.5], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // エリアグループ作成
+    const gAyutthaya = L.layerGroup().addTo(map);
+    const gWatArun = L.layerGroup().addTo(map);
+    const gIconSiam = L.layerGroup().addTo(map);
+    const gSiam = L.layerGroup().addTo(map);
+    const gSuvarnabhumi = L.layerGroup().addTo(map);
+    const gKohLarn = L.layerGroup().addTo(map);
+    const gRayong = L.layerGroup().addTo(map);
+
+    // 各エリアの円とラベル
+    L.circle([14.3512, 100.5695], {radius: 3500, color: 'red', fillColor: 'red', fillOpacity: 0.2}).addTo(gAyutthaya).bindTooltip("アユタヤ", {permanent: true, direction: "center", className: "always-label"});
+    L.circle([13.7451, 100.4907], {radius: 1200, color: 'blue', fillColor: 'blue', fillOpacity: 0.2}).addTo(gWatArun).bindTooltip("ワット・アルン", {permanent: true, direction: "center", className: "always-label"});
+    L.circle([13.7262, 100.5105], {radius: 1000, color: 'green', fillColor: 'green', fillOpacity: 0.2}).addTo(gIconSiam).bindTooltip("アイコンサイアム", {permanent: true, direction: "center", className: "always-label"});
+    L.circle([13.74595, 100.52994], {radius: 2000, color: 'purple', fillColor: 'purple', fillOpacity: 0.2}).addTo(gSiam).bindTooltip("バンコク中心部", {permanent: true, direction: "center", className: "always-label"});
+    L.circle([13.69155, 100.7504], {radius: 2000, color: 'orange', fillColor: 'orange', fillOpacity: 0.2}).addTo(gSuvarnabhumi).bindTooltip("スワンナプーム国際空港", {permanent: true, direction: "center", className: "always-label"});
+    L.circle([12.9100, 100.7801], {radius: 3000, color: 'brown', fillColor: 'brown', fillOpacity: 0.2}).addTo(gKohLarn).bindTooltip("ラン島", {permanent: true, direction: "center", className: "always-label"});
+    L.circle([12.6500, 101.4000], {radius: 25000, color: 'teal', fillColor: 'teal', fillOpacity: 0.1}).addTo(gRayong).bindTooltip("ラヨーン", {permanent: true, direction: "center", className: "always-label"});
+
+    function addM(lat, lng, id, grp) { 
+        let marker = L.marker([lat, lng]).addTo(grp);
+        marker.on('mouseover', function() { this.bindPopup(`<img src="images/image${id}.jpg" width="150">`).openPopup(); });
+        marker.on('mouseout', function() { this.closePopup(); });
+    }
+
+    // 全データの管理
+    const allSpots = [
+        {id: 2, lat: 13.74595, lng: 100.52994, grp: gSiam, areaName: "バンコク中心部"},
+        {id: 4, lat: 13.74417, lng: 100.48887, grp: gWatArun, areaName: "ワット・アルン"},
+        {id: 5, lat: 13.7437, lng: 100.52426, grp: gSiam, areaName: "バンコク中心部"},
+        {id: 7, lat: 13.7435, lng: 100.52415, grp: gSiam, areaName: "バンコク中心部"},
+        {id: 8, lat: 12.92569, lng: 100.86776, grp: gKohLarn, areaName: "ラン島"},
+        {id: 9, lat: 12.92342, lng: 100.7843, grp: gKohLarn, areaName: "ラン島"},
+        {id: 10, lat: 13.74425, lng: 100.4889, grp: gWatArun, areaName: "ワット・アルン"},
+        {id: 11, lat: 12.92096, lng: 100.78805, grp: gKohLarn, areaName: "ラン島"},
+        {id: 12, lat: 12.90416, lng: 100.77274, grp: gKohLarn, areaName: "ラン島"},
+        {id: 13, lat: 12.9184, lng: 100.7868, grp: gKohLarn, areaName: "ラン島"},
+        {id: 14, lat: 12.90068, lng: 100.77604, grp: gKohLarn, areaName: "ラン島"},
+        {id: 15, lat: 12.91252, lng: 100.7691, grp: gKohLarn, areaName: "ラン島"},
+        {id: 16, lat: 13.69304, lng: 100.75118, grp: gSuvarnabhumi, areaName: "スワンナプーム国際空港"},
+        {id: 17, lat: 13.69155, lng: 100.7504, grp: gSuvarnabhumi, areaName: "スワンナプーム国際空港"},
+        {id: 20, lat: 12.64827, lng: 101.3448, grp: gRayong, areaName: "ラヨーン"},
+        {id: 21, lat: 12.64131, lng: 101.50346, grp: gRayong, areaName: "ラヨーン"},
+        {id: 22, lat: 12.63075, lng: 101.52999, grp: gRayong, areaName: "ラヨーン"},
+        {id: 23, lat: 12.63078, lng: 101.53003, grp: gRayong, areaName: "ラヨーン"},
+        {id: 24, lat: 12.66585, lng: 101.23679, grp: gRayong, areaName: "ラヨーン"},
+        {id: 25, lat: 12.6658, lng: 101.23632, grp: gRayong, areaName: "ラヨーン"},
+        {id: 26, lat: 12.6534, lng: 101.23633, grp: gRayong, areaName: "ラヨーン"},
+        {id: 27, lat: 12.66504, lng: 101.23749, grp: gRayong, areaName: "ラヨーン"},
+        {id: 28, lat: 12.65687, lng: 101.2747, grp: gRayong, areaName: "ラヨーン"},
+        {id: 30, lat: 13.75135, lng: 100.53118, grp: gSiam, areaName: "バンコク中心部"},
+        {id: 31, lat: 13.75138, lng: 100.53114, grp: gSiam, areaName: "バンコク中心部"},
+        {id: 32, lat: 14.36125, lng: 100.59349, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 33, lat: 14.3603, lng: 100.59337, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 34, lat: 14.35284, lng: 100.56066, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 35, lat: 14.34306, lng: 100.5426, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 36, lat: 14.3437, lng: 100.54128, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 37, lat: 14.34077, lng: 100.55771, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 38, lat: 14.34072, lng: 100.5577, grp: gAyutthaya, areaName: "アユタヤ"},
+        {id: 39, lat: 13.72636, lng: 100.51084, grp: gIconSiam, areaName: "アイコンサイアム"},
+        {id: 40, lat: 13.74668, lng: 100.49192, grp: gWatArun, areaName: "ワット・アルン"},
+        {id: 41, lat: 13.72715, lng: 100.51191, grp: gIconSiam, areaName: "アイコンサイアム"},
+        {id: 42, lat: 13.72624, lng: 100.5105, grp: gIconSiam, areaName: "アイコンサイアム"},
+        {id: 43, lat: 13.72628, lng: 100.50968, grp: gIconSiam, areaName: "アイコンサイアム"},
+        {id: 44, lat: 13.7466, lng: 100.49247, grp: gWatArun, areaName: "ワット・アルン"},
+        {id: 45, lat: 13.74506, lng: 100.49127, grp: gWatArun, areaName: "ワット・アルン"}
+    ];
+
+    const areaOrder = ["アユタヤ", "ワット・アルン", "アイコンサイアム", "バンコク中心部", "スワンナプーム国際空港", "ラン島", "ラヨーン"];
+    const sectionsContainer = document.getElementById("sectionsContainer");
+
+    areaOrder.forEach(targetArea => {
+        const areaSpots = allSpots.filter(s => s.areaName === targetArea);
+        if (areaSpots.length === 0) return;
+
+        areaSpots.forEach(spot => {
+            if (spot.showOnMap !== false) {
+                addM(spot.lat, spot.lng, spot.id, spot.grp);
+            }
+        });
+
+        const listSpots = areaSpots.filter(s => s.showInList !== false);
+        if (listSpots.length === 0) return;
+
+        let sectionHtml = `
+            <div class="mb-5">
+                <h3 class="border-bottom pb-2 mb-3 text-primary">${targetArea}</h3>
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+        `;
+
+        listSpots.forEach(spot => {
+            sectionHtml += `
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0">
+                        <img src="images/image${spot.id}.jpg" class="card-img-top" alt="Image ${spot.id}" onclick="openModal('images/image${spot.id}.jpg')">
+                        <div class="card-body py-2">
+                            <h6 class="card-title text-muted text-center font-monospace">photo-${spot.id}</h6>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        sectionHtml += `</div></div>`;
+        sectionsContainer.innerHTML += sectionHtml;
+    });
+
+    L.control.layers(null, {
+        "アユタヤ": gAyutthaya, "ワット・アルン": gWatArun, "アイコンサイアム": gIconSiam,
+        "バンコク中心部": gSiam, "スワンナプーム国際空港": gSuvarnabhumi, "ラン島": gKohLarn, "ラヨーン": gRayong
+    }).addTo(map);
+
+    function openModal(imageSrc) {
+        document.getElementById('modalImage').src = imageSrc;
+        var myModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        myModal.show();
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
